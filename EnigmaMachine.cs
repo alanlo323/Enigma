@@ -137,14 +137,13 @@ namespace Enigma
 
         public void ResolveTriggers()
         {
-            var enumerator = Rings.GetEnumerator();
-            var lastItem = enumerator.Current;
-            while (enumerator.MoveNext())
+            Ring lastItem = null;
+            Rings.ToList().ForEach(x =>
             {
-                if (lastItem != null && lastItem.OnLapFininshedTriggers != enumerator.Current.OnLapFininshed)
-                    lastItem.OnLapFininshedTriggers += enumerator.Current.OnLapFininshed;
-                lastItem = enumerator.Current;
-            }
+                if (lastItem != null && lastItem.OnLapFininshedTriggers != x.OnLapFininshed)
+                    lastItem.OnLapFininshedTriggers +=x.OnLapFininshed;
+                lastItem = x;
+            });
         }
 
         public void UpdateRingDegree(int index, int degree)
