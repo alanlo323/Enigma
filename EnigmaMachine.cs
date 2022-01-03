@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
 
 namespace Enigma
 {
@@ -26,7 +25,6 @@ namespace Enigma
             {
                 using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
                 {
-                    byte[] rngBytes = new byte[4];
                     List<int> v = new List<int>();
                     LinkedList<Connector> connectors = new LinkedList<Connector>();
                     Ring ring = new Ring(connectors);
@@ -58,7 +56,7 @@ namespace Enigma
 
         public static EnigmaMachine CreateDefault()
         {
-            return new EnigmaMachine(ringSize: 3, connectorSize: SUPPORT_CHARACTER.Length);
+            return new EnigmaMachine(ringSize: 4, connectorSize: SUPPORT_CHARACTER.Length);
         }
 
         public void AddRing(Ring ring)

@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Enigma
 {
@@ -11,7 +7,16 @@ namespace Enigma
     {
         public class Random
         {
-            public static RandomNumberGenerator CprytoRNG = RandomNumberGenerator.Create();
+            private static RandomNumberGenerator _CprytoRNG;
+
+            public static RandomNumberGenerator CprytoRNG
+            {
+                get
+                {
+                    if (_CprytoRNG == null) _CprytoRNG = RandomNumberGenerator.Create();
+                    return _CprytoRNG;
+                }
+            }
 
             // Return a random integer between a min and max value.
             public static int GetInt32(int min, int max, RandomNumberGenerator rng = null)

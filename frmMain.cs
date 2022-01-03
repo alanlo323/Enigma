@@ -1,12 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Enigma
@@ -118,9 +112,7 @@ namespace Enigma
         private void buttonReset_Click(object sender, EventArgs e)
         {
             textBoxOutput.Text = string.Empty;
-            enigma.UpdateRingDegree(0, 0);
-            enigma.UpdateRingDegree(1, 0);
-            enigma.UpdateRingDegree(2, 0);
+            enigma.Reset();
             RefreshRingStatus();
         }
 
