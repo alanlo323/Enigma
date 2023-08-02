@@ -174,6 +174,7 @@ namespace Enigma
             {
                 try
                 {
+                    if (!EnigmaMachine.SUPPORT_CHARACTER.Contains(c.ToString())) continue;
                     var outsd = enigma.GetOutput(c);
                     stringBuilder.Append(outsd);
                 }
