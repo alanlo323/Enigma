@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace Enigma
@@ -111,6 +112,7 @@ namespace Enigma
 
         private void buttonReset_Click(object sender, EventArgs e)
         {
+            textBoxInput.Text = string.Empty;
             textBoxOutput.Text = string.Empty;
             enigma.Reset();
             RefreshRingStatus();
@@ -168,15 +170,28 @@ namespace Enigma
         {
             if (enigmaRuning) return;
             enigmaRuning = true;
-
+            TextBox textBox = (TextBox)sender;
             StringBuilder stringBuilder = new StringBuilder();
-            foreach (char c in ((TextBox)sender).Text)
+            while (textBox.Text.Length > 0)
             {
+                char c = textBox.Text[0];
                 try
                 {
-                    if (!EnigmaMachine.SUPPORT_CHARACTER.Contains(c.ToString())) continue;
-                    var outsd = enigma.GetOutput(c);
-                    stringBuilder.Append(outsd);
+                    textBox.Text = textBox.Text.Substring(1);
+                    textBox.SelectionStart = textBox.Text.Length;
+                    textBox.SelectionLength = 0;
+
+                    if (EnigmaMachine.SUPPORT_CHARACTER.Contains(c.ToString()))
+                    {
+                        var outsd = enigma.GetOutput(c);
+                        stringBuilder.Append(outsd);
+                        textBoxOutput.Text += stringBuilder.ToString();
+                    }
+
+                    stringBuilder.Clear();
+                    RefreshRingStatus();
+
+                    Util.Timer.Wait(10);
                 }
                 catch (Exception)
                 {
@@ -184,7 +199,6 @@ namespace Enigma
                 }
             }
 
-            textBoxOutput.Text += stringBuilder.ToString();
             ((TextBox)sender).Text = string.Empty;
 
             RefreshRingStatus();

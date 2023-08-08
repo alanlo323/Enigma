@@ -8,7 +8,7 @@ namespace Enigma
 {
     public class EnigmaMachine
     {
-        public const string SUPPORT_CHARACTER = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ";
+        public const string SUPPORT_CHARACTER = @"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ,.?()+-*/=_{}:;[]";
         //public const string SUPPORT_CHARACTER = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
         //public const string SUPPORT_CHARACTER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -19,6 +19,8 @@ namespace Enigma
 
         private EnigmaMachine(int ringSize, int connectorSize)
         {
+            if (connectorSize % 2 != 0) throw new NotSupportedException("Connector size must be a even number.");
+
             Rings = new LinkedList<Ring>();
 
             for (int i = 0; i < ringSize; i++)
@@ -69,9 +71,10 @@ namespace Enigma
             Rings.AddLast(ring);
             if (Rings.Last.Previous != null) Rings.Last.Previous.Value.OnLapFininshedTriggers += Rings.Last.Value.OnLapFininshed;
         }
-
+        static char _input;
         public char GetOutput(char c)
         {
+            _input = c;
             int intInput = SUPPORT_CHARACTER.IndexOf(c);
             int intOutput = GetOutput(intInput);
             return SUPPORT_CHARACTER.ToCharArray().ElementAt(intOutput);
@@ -98,6 +101,28 @@ namespace Enigma
                 while (stack.Count > 0)
                 {
                     lastInput = stack.Pop().GetInValue(lastInput);
+                }
+
+                if (input == lastInput)
+                {
+                    var _stack = new Stack<Ring>();
+                    var _enumerator = Rings.GetEnumerator();
+                    var _lastInput = input;
+                    while (_enumerator.MoveNext())
+                    {
+                        _stack.Push(_enumerator.Current);
+
+                        _lastInput = _enumerator.Current.GetOutValue(_lastInput);
+                    }
+
+                    //  Reverse
+                    if (_stack.Count > 0) _stack.Pop();
+                    while (_stack.Count > 0)
+                    {
+                        _lastInput = _stack.Pop().GetInValue(_lastInput);
+                    }
+
+                    { }
                 }
 
                 return lastInput;
@@ -141,7 +166,7 @@ namespace Enigma
             Rings.ToList().ForEach(x =>
             {
                 if (lastItem != null && lastItem.OnLapFininshedTriggers != x.OnLapFininshed)
-                    lastItem.OnLapFininshedTriggers +=x.OnLapFininshed;
+                    lastItem.OnLapFininshedTriggers += x.OnLapFininshed;
                 lastItem = x;
             });
         }

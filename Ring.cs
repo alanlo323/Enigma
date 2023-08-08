@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 
 namespace Enigma
 {
@@ -36,40 +37,53 @@ namespace Enigma
 
         public void ConvertToReflector()
         {
+            this.IsReflector = true;
             Queue<int> pendingConnector = new Queue<int>();
-            var connectors = Connectors.ToArray();
-            for (int i = 0; i < connectors.Length; i++)
-            {
-                if (!IsConnectorPaired(connectors, i))
-                {
-                    if (!IsConnectorPaired(connectors, connectors[i].Out))
-                    {
-                        pendingConnector.Enqueue(connectors[i].Out);
-                        connectors[i].Out = i;
-                    }
-                    else
-                    {
-                        while (pendingConnector.Count > 0 && IsConnectorPaired(connectors, pendingConnector.Peek()))
-                        {
-                            pendingConnector.Dequeue();
-                        }
 
-                        if (pendingConnector.Count > 0)
+            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+            {
+                while (!IsValidReflector())
+                {
+                    var v = Connectors.ToList(); ;
+                    v = v.OrderBy(x => Util.Random.GetInt32(0, v.Count, rng)).ToList();
+
+                    var connectors = v.ToArray();
+                    for (int i = 0; i < connectors.Length; i++)
+                    {
+                        if (!IsConnectorPaired(connectors, i, allowSelfPaired: false))
                         {
-                            connectors[i].Out = pendingConnector.Dequeue();
-                            pendingConnector.Enqueue(connectors[connectors[i].Out].Out);
-                            connectors[connectors[i].Out].Out = connectors[i].Out;
+                            if (!IsConnectorPaired(connectors, connectors[i].Out, allowSelfPaired: false))
+                            {
+                                pendingConnector.Enqueue(connectors[connectors[i].Out].Out);
+                                connectors[connectors[i].Out].Out = i;
+                            }
+                            else
+                            {
+                                while (pendingConnector.Count > 0 && IsConnectorPaired(connectors, pendingConnector.Peek(), allowSelfPaired: false))
+                                {
+                                    pendingConnector.Dequeue();
+                                }
+
+                                if (pendingConnector.Count > 0)
+                                {
+                                    connectors[i].Out = pendingConnector.Dequeue();
+                                    pendingConnector.Enqueue(connectors[connectors[i].Out].Out);
+                                    connectors[connectors[i].Out].Out = connectors[i].Out;
+                                }
+                                else
+                                {
+                                    pendingConnector.Enqueue(i);
+                                }
+                            }
                         }
-                        else
-                        {
-                            pendingConnector.Enqueue(i);
-                        }
+                        connectors[connectors[i].Out].Out = i;
                     }
+
+                    Connectors.Clear();
+                    for (int j = 0; j < connectors.Length; j++) Connectors.AddLast(new Connector() { Out = connectors[j].Out });
                 }
-                connectors[connectors[i].Out].Out = i;
             }
 
-            IsReflector = true;
             Validate();
         }
 
@@ -150,8 +164,27 @@ namespace Enigma
                 {
                     if (connectors[connectors[i].Out].Out != i)
                         throw new BadConnectorException($"Ring is marked as reflector but connectors are not paired ({i}:{connectors[i].Out} {connectors[i].Out}:{connectors[connectors[i].Out].Out})");
+                    if (connectors[connectors[i].Out].Out == connectors[i].Out)
+                        throw new BadConnectorException($"Ring is marked as reflector but connectors are self paired ({i}:{connectors[i].Out} {connectors[i].Out}:{connectors[connectors[i].Out].Out})");
                 }
             }
+        }
+
+        public bool IsValidReflector()
+        {
+            if (IsReflector)
+            {
+                var connectors = Connectors.ToArray();
+                for (int i = 0; i < connectors.Length; i++)
+                {
+                    if (connectors[connectors[i].Out].Out != i)
+                        return false;
+                    if (connectors[connectors[i].Out].Out == connectors[i].Out)
+                        return false;
+                }
+            }
+
+            return true;
         }
 
         private int GetValue(int? inValue = null, int? outValue = null)
@@ -168,23 +201,25 @@ namespace Enigma
 
             if (inValue.HasValue)
             {
-                var matchedConnector = Connectors.ElementAt((int)inValue);
+                var matchedConnector = Connectors.ElementAt(inValue.Value);
                 return matchedConnector.Out;
             }
             if (outValue.HasValue)
             {
                 var matchedConnector = Connectors
                     .Select((c, index) => (c, index))
-                    .First(x => x.c.Out == (int)outValue);
+                    .First(x => x.c.Out == outValue.Value);
                 return matchedConnector.index;
             }
 
             throw new NotImplementedException();
         }
 
-        private bool IsConnectorPaired(Connector[] connectors, int index)
+        private bool IsConnectorPaired(Connector[] connectors, int index, bool allowSelfPaired = true)
         {
-            return connectors[connectors[index].Out].Out == index;
+            bool result = connectors[connectors[index].Out].Out == index;
+            if (!allowSelfPaired) result &= connectors[index].Out != connectors[connectors[index].Out].Out;
+            return result;
         }
 
         public class BadConnectorException : InvalidOperationException
